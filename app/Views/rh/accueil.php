@@ -14,5 +14,10 @@
     <p>Rôle session : <span class="badge"><?= esc($role ?? '—') ?></span></p>
     <p>Espace de travail prêt. Ajoutez vos routes et contrôleurs dans ce préfixe.</p>
     <p><a href="<?= site_url('deconnexion') ?>">Déconnexion</a></p>
+    <p>
+    <a href="<?= site_url('rh/conditions') ?>">
+        Gérer les conditions de contrat
+    </a>
+</p>
 </body>
 </html>

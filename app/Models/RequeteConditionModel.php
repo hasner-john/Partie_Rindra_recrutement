@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use DomainException;
+use Throwable;
 
 class RequeteConditionModel extends Model
 {
@@ -79,4 +81,61 @@ class RequeteConditionModel extends Model
             ->orderBy('h.date_action', 'DESC')
             ->get()->getResultArray();
     }
+    
+    public function candidatsAvecRequetes(): array
+    {
+        return $this->db->query(
+            "SELECT c.id_candidature, p.nom, p.prenom, o.titre,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN r.statut = 'SOUMISE' THEN 1 ELSE 0 END) AS a_traiter
+             FROM requete_condition_contrat r
+             JOIN candidature c ON c.id_candidature = r.id_candidature
+             JOIN candidat ca   ON ca.id_candidat = c.id_candidat
+             JOIN personne p    ON p.id_personne = ca.id_personne
+             JOIN offre_emploi o ON o.id_offre = c.id_offre
+             GROUP BY c.id_candidature, p.nom, p.prenom, o.titre
+             ORDER BY a_traiter DESC, p.nom"
+        )->getResultArray();
+    }
+
+    public function deCandidature(int $idCand): array
+    {
+        return $this->db->query(
+            "SELECT r.*, cc.libelle, cc.valeur_condition AS valeur_actuelle
+             FROM requete_condition_contrat r
+             JOIN condition_contrat cc ON cc.id_condition = r.id_condition
+             WHERE r.id_candidature = ?
+             ORDER BY cc.ordre_affichage, r.date_creation", [$idCand]
+        )->getResultArray();
+    }
+
+    /** Décision RH : SOUMISE → ACCEPTEE_RH | REFUSEE_RH (avant la Direction). */
+    public function decisionRh(int $idRequete, bool $accepte, int $userId, ?string $comm = null): int
+    {
+        $nouveau = $accepte ? 'ACCEPTEE_RH' : 'REFUSEE_RH';
+        $this->db->transBegin();
+        try {
+            $row = $this->db->query(
+                'SELECT statut, id_candidature FROM requete_condition_contrat WHERE id_requete = ?', [$idRequete]
+            )->getRowArray();
+            if (! $row) {
+                throw new DomainException('Requête introuvable.');
+            }
+            if ($row['statut'] !== 'SOUMISE') {
+                throw new DomainException('Requête déjà traitée par le RH.');
+            }
+            $this->db->table($this->table)->where('id_requete', $idRequete)
+                ->update(['statut' => $nouveau, 'date_modification' => date('Y-m-d H:i:s')]);
+            $this->db->table('historique_requete_condition')->insert([
+                'id_requete' => $idRequete, 'ancien_statut' => $row['statut'], 'nouveau_statut' => $nouveau,
+                'id_utilisateur' => $userId, 'commentaire' => $comm,
+            ]);
+            $this->db->transCommit();
+            return (int) $row['id_candidature'];
+        } catch (Throwable $e) {
+            $this->db->transRollback();
+            throw $e;
+        }
+    }
+
 }

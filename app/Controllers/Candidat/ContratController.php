@@ -279,11 +279,11 @@ class ContratController extends BaseController
         }
 
         $row = $this->db->query(
-            "SELECT encode(pdf_donnees, 'hex') AS hex, pdf_type_mime, pdf_nom FROM contrat WHERE id_contrat = ?",
+            "SELECT pdf_donnees, pdf_type_mime, pdf_nom FROM contrat WHERE id_contrat = ?",
             [$id]
         )->getRowArray();
 
-        $binary = hex2bin((string) $row['hex']);
+        $binary = $row['pdf_donnees'];
         return $this->response
             ->setHeader('Content-Type', $row['pdf_type_mime'] ?: 'application/pdf')
             ->setHeader('Content-Disposition', 'inline; filename="' . addslashes($row['pdf_nom']) . '"')

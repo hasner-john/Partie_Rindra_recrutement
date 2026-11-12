@@ -12,7 +12,9 @@
 </head>
 <body>
     <h1>Inscription candidat</h1>
-    <p>À implémenter par Danie (utilisateur + personne + candidat).</p>
+    <?php if (session()->getFlashdata('error')): ?>
+        <p style="color:#991b1b"><?= esc(session()->getFlashdata('error')) ?></p>
+    <?php endif; ?>
     <form method="post" action="<?= site_url('inscription') ?>">
         <?= csrf_field() ?>
         <label for="email">Email</label>

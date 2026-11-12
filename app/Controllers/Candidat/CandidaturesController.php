@@ -120,29 +120,23 @@ class CandidaturesController extends BaseController
         $db->transBegin();
 
         try {
-            // Décodage hex côté SQL — sûr et portable pour BYTEA
-            $sql = "INSERT INTO candidature
-                    (id_offre, id_candidat,
-                     cv_nom, cv_type_mime, cv_donnees,
-                     lettre_nom, lettre_type_mime, lettre_donnees,
-                     cin_nom, cin_type_mime, cin_donnees,
-                     motivation, statut)
-                    VALUES (?, ?,
-                            ?, ?, decode(?, 'hex'),
-                            ?, ?, decode(?, 'hex'),
-                            ?, ?, decode(?, 'hex'),
-                            ?, 'RECUE')
-                    RETURNING id_candidature";
+            $db->table('candidature')->insert([
+                'id_offre' => $idOffre,
+                'id_candidat' => $idCandidat,
+                'cv_nom' => $cvNom,
+                'cv_type_mime' => $mimeCv,
+                'cv_donnees' => $cvBin,
+                'lettre_nom' => $lettreNom,
+                'lettre_type_mime' => $mimeLettre,
+                'lettre_donnees' => $lettreBin,
+                'cin_nom' => $cinNom,
+                'cin_type_mime' => $mimeCin,
+                'cin_donnees' => $cinBin,
+                'motivation' => $motivation !== '' ? $motivation : null,
+                'statut' => 'RECUE',
+            ]);
 
-            $row = $db->query($sql, [
-                $idOffre, $idCandidat,
-                $cvNom, $mimeCv, bin2hex($cvBin),
-                $lettreNom, $mimeLettre, bin2hex($lettreBin),
-                $cinNom, $mimeCin, bin2hex($cinBin),
-                $motivation !== '' ? $motivation : null,
-            ])->getRowArray();
-
-            $idCandidature = (int) ($row['id_candidature'] ?? 0);
+            $idCandidature = (int) $db->insertID();
             if ($idCandidature <= 0) {
                 throw new \RuntimeException('ID candidature non retourné.');
             }

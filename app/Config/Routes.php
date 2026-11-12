@@ -27,15 +27,117 @@ $routes->get('deconnexion', 'AuthController::deconnexion');
 // -------------------------------------------------------------------------
 $routes->group('departement', ['filter' => 'role:DEPARTEMENT'], static function ($routes) {
     $routes->get('/', 'Departement\AccueilController::index');
-    // John ajoutera : postes, conditions, demandes
+    $routes->get('postes', 'Departement\AccueilController::postes');
+    $routes->get('postes/nouveau', 'Departement\AccueilController::nouveauPoste');
+    $routes->post('postes', 'Departement\AccueilController::creerPoste');
+    $routes->post('postes/(:num)/statut', 'Departement\AccueilController::changerStatutPoste/$1');
+    $routes->get('postes/(:num)/conditions', 'Departement\AccueilController::conditions/$1');
+    $routes->post('postes/(:num)/conditions', 'Departement\AccueilController::enregistrerConditions/$1');
+    $routes->get('demandes', 'Departement\AccueilController::demandes');
+    $routes->get('demandes/nouveau', 'Departement\AccueilController::nouvelleDemande');
+    $routes->post('demandes', 'Departement\AccueilController::creerDemande');
+    $routes->get('demandes/(:num)', 'Departement\AccueilController::detailDemande/$1');
 });
 
 // -------------------------------------------------------------------------
 // Espace RH — Tsiky
 // -------------------------------------------------------------------------
+
 $routes->group('rh', ['filter' => 'role:RH'], static function ($routes) {
     $routes->get('/', 'Rh\AccueilController::index');
-    // Tsiky ajoutera : demandes, conditions, offres, candidatures, entretiens, tests, évaluations, requêtes
+
+    // Conditions de contrat
+    $routes->get('conditions', 'Rh\ConditionsController::index');
+    $routes->get('conditions/(:num)', 'Rh\ConditionsController::show/$1');
+
+    $routes->get('conditions/(:num)/create', 'Rh\ConditionsController::create/$1');
+    $routes->post('conditions/(:num)/store', 'Rh\ConditionsController::store/$1');
+
+    $routes->get('conditions/edit/(:num)', 'Rh\ConditionsController::edit/$1');
+    $routes->post('conditions/(:num)/update', 'Rh\ConditionsController::update/$1');
+    $routes->post('conditions/(:num)/delete', 'Rh\ConditionsController::delete/$1');
+
+    $routes->post('conditions/(:num)/confirm', 'Rh\ConditionsController::confirm/$1');
+
+    $routes->get('demandes', 'Rh\DemandesController::index');
+    $routes->get('demandes/(:num)', 'Rh\DemandesController::show/$1');
+
+    $routes->post('demandes/decision', 'Rh\DemandesController::decision');
+    $routes->post('demandes/reouvrir', 'Rh\DemandesController::reouvrir');
+    // Offres d'emploi
+    $routes->get('offres', 'Rh\OffresController::index');
+    $routes->get('offres/demandes', 'Rh\OffresController::demandesEligibles');
+    $routes->get('offres/creer/(:num)', 'Rh\OffresController::creer/$1');
+    $routes->post('offres/enregistrer', 'Rh\OffresController::enregistrer');
+    $routes->get('offres/(:num)', 'Rh\OffresController::show/$1');
+    $routes->post('offres/soumettre/(:num)', 'Rh\OffresController::soumettre/$1');
+    $routes->post('offres/publier/(:num)', 'Rh\OffresController::publier/$1');
+    $routes->post('offres/fermer/(:num)', 'Rh\OffresController::fermer/$1');
+
+    // Candidatures RH
+    $routes->get(
+        'offres/(:num)/candidatures',
+        'Rh\CandidaturesController::index/$1'
+    );
+
+    $routes->get(
+        'candidatures/(:num)',
+        'Rh\CandidaturesController::detail/$1'
+    );
+
+    $routes->get(
+        'candidatures/(:num)/document/(:segment)',
+        'Rh\CandidaturesController::document/$1/$2'
+    );
+
+    $routes->post(
+        'candidatures/(:num)/decider',
+        'Rh\CandidaturesController::decider/$1'
+    );
+
+    $routes->get(
+        'candidatures/(:num)/entretien',
+        'Rh\CandidaturesController::entretien/$1'
+    );
+    
+    // Idealy.5 — Entretiens
+    $routes->get('entretiens', 'Rh\Entretiens::index');
+    $routes->get('entretiens/nouveau/(:num)', 'Rh\Entretiens::nouveau/$1');   // après présélection
+    $routes->post('entretiens/creer', 'Rh\Entretiens::creer');
+    $routes->post('entretiens/(:num)/statut', 'Rh\Entretiens::statut/$1');
+
+    // Idealy.5 — Tests techniques
+    $routes->get('tests', 'Rh\TestsTechniques::index');
+    $routes->get('tests/nouveau/(:num)', 'Rh\TestsTechniques::nouveau/$1');
+    $routes->post('tests/creer', 'Rh\TestsTechniques::creer');
+    $routes->post('tests/(:num)/statut', 'Rh\TestsTechniques::statut/$1');
+
+    // Idealy.6 — Évaluations
+    $routes->get('evaluations', 'Rh\Evaluations::index');
+    $routes->get('evaluations/(:num)', 'Rh\Evaluations::candidature/$1');
+    $routes->post('evaluations/(:num)/evaluer', 'Rh\Evaluations::evaluer/$1');
+    $routes->post('evaluations/(:num)/decider', 'Rh\Evaluations::decider/$1');
+
+    // Idealy.6 — Requêtes du candidat
+    $routes->get('requetes', 'Rh\Requetes::index');
+    $routes->get('requetes/(:num)', 'Rh\Requetes::candidature/$1');
+    $routes->post('requetes/(:num)/decision', 'Rh\Requetes::decision/$1');
+
+    // Dossiers administratifs des salariés
+    $routes->get('employes', 'Rh\EmployesController::index');
+    $routes->get('employes/(:num)', 'Rh\EmployesController::show/$1');
+    $routes->get('employes/(:num)/documents/(:num)', 'Rh\EmployesController::document/$1/$2');
+
+    // Bloc 7 — congés et absences.
+    $routes->get('conges', 'Rh\CongesController::index');
+    $routes->post('conges', 'Rh\CongesController::store');
+    $routes->post('conges/(:num)/decision', 'Rh\CongesController::decision/$1');
+    $routes->post('absences', 'Rh\CongesController::absence');
+    $routes->get('temps-travail', 'Rh\TempsTravailController::index');
+    $routes->post('temps-travail/pointage', 'Rh\TempsTravailController::pointer');
+    $routes->post('employes/(:num)/salaires', 'Rh\EmployesController::ajouterSalaire/$1');
+    $routes->post('employes/(:num)/affectations', 'Rh\EmployesController::ajouterAffectation/$1');
+    $routes->post('employes/(:num)/documents', 'Rh\EmployesController::ajouterDocument/$1');
 });
 
 // -------------------------------------------------------------------------

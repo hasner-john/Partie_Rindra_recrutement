@@ -1,17 +1,48 @@
 BEGIN;
+-- Données minimales de démonstration
+INSERT INTO departement (id_departement, nom, description, actif) VALUES
+(1, 'Informatique', 'Département informatique', TRUE)
+ON CONFLICT(id_departement) DO NOTHING;
 
+INSERT INTO utilisateur (id_utilisateur, email, mot_de_passe_hash, role, actif) VALUES
+(1, 'direction@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTION', TRUE),
+(2, 'candidat@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'CANDIDAT', TRUE),
+(3, 'rh@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'RH', TRUE),
+(4, 'dept@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DEPARTEMENT', TRUE)
+ON CONFLICT(id_utilisateur) DO NOTHING;
+
+INSERT INTO personne (id_personne, id_utilisateur, nom, prenom, telephone, adresse) VALUES
+(1, 2, 'Rakoto', 'Jean', '0340000000', 'Antananarivo')
+ON CONFLICT(id_personne) DO NOTHING;
+INSERT INTO candidat (id_candidat, id_personne, niveau_etude, experience) VALUES
+(1, 1, 'Bac+5', '3 ans en développement web')
+ON CONFLICT(id_candidat) DO NOTHING;
+INSERT INTO poste (id_poste, id_departement, libelle, description, statut, cree_par) VALUES
+(1, 1, 'Développeur Fullstack', 'Poste de test', 'ACTIF', 4)
+ON CONFLICT(id_poste) DO NOTHING;
+INSERT INTO condition_contrat (id_condition, id_poste, libelle, type_valeur, valeur_condition, ordre_affichage, statut) VALUES
+(1, 1, 'Salaire mensuel (Ar)', 'MONTANT', '800000', 1, 'CONFIRMER'),
+(2, 1, 'Période d''essai (mois)', 'NOMBRE', '3', 2, 'CONFIRMER'),
+(3, 1, 'Télétravail possible', 'BOOLEEN', 'OUI', 3, 'CONFIRMER')
+ON CONFLICT(id_condition) DO NOTHING;
+INSERT INTO demande_recrutement (id_demande, id_poste, id_demandeur, effectif_demande, motif, salaire_par_personne, date_besoin, statut) VALUES
+(1, 1, 4, 2, 'Renfort projet X', 800000, date('now', '+30 days'), 'EN_ATTENTE')
+ON CONFLICT(id_demande) DO NOTHING;
+INSERT INTO offre_emploi (id_offre, id_demande, titre, description, statut, cree_par) VALUES
+(1, 1, 'Développeur Fullstack - Projet X', 'Nous cherchons un développeur fullstack.', 'EN_ATTENTE', 3)
+ON CONFLICT(id_offre) DO NOTHING;
 -- ========== OFFRE 2 : PUBLIEE (nouvelle demande 2) ==========
 INSERT INTO demande_recrutement (id_demande, id_poste, id_demandeur, effectif_demande, motif, salaire_par_personne, date_besoin, statut)
-SELECT 2, 1, 4, 1, 'Test candidatures', 800000, CURRENT_DATE + 30, 'VALIDE'
+SELECT 2, 1, 4, 1, 'Test candidatures', 800000, date('now', '+30 days'), 'VALIDE'
 WHERE NOT EXISTS (SELECT 1 FROM demande_recrutement WHERE id_demande = 2);
 
 INSERT INTO offre_emploi (id_offre, id_demande, titre, description, date_publication, statut, cree_par)
-SELECT 2, 2, 'Développeur Backend — Projet Y', 'Offre publiée de test.', CURRENT_DATE, 'PUBLIEE', 3
+SELECT 2, 2, 'Développeur Backend — Projet Y', 'Offre publiée de test.', date('now'), 'PUBLIEE', 3
 WHERE NOT EXISTS (SELECT 1 FROM offre_emploi WHERE id_offre = 2);
 
 -- ========== OFFRE 3 : EN_ATTENTE (nouvelle demande 3) ==========
 INSERT INTO demande_recrutement (id_demande, id_poste, id_demandeur, effectif_demande, motif, salaire_par_personne, date_besoin, statut)
-SELECT 3, 1, 4, 1, 'Test validation', 800000, CURRENT_DATE + 30, 'EN_ATTENTE'
+SELECT 3, 1, 4, 1, 'Test validation', 800000, date('now', '+30 days'), 'EN_ATTENTE'
 WHERE NOT EXISTS (SELECT 1 FROM demande_recrutement WHERE id_demande = 3);
 
 INSERT INTO offre_emploi (id_offre, id_demande, titre, description, statut, cree_par)
@@ -40,9 +71,9 @@ INSERT INTO candidature (id_candidature, id_offre, id_candidat,
     cin_nom, cin_type_mime, cin_donnees,
     motivation, statut)
 SELECT 1, 2, 1,
-    'cv.pdf','application/pdf', decode('255044462d312e34','hex'),
-    'lettre.pdf','application/pdf', decode('255044462d312e34','hex'),
-    'cin.jpg','image/jpeg', decode('ffd8ffe0','hex'),
+    'cv.pdf','application/pdf', X'',
+    'lettre.pdf','application/pdf', X'',
+    'cin.jpg','image/jpeg', X'',
     'Je suis motivé.', 'RECUE'
 WHERE NOT EXISTS (SELECT 1 FROM candidature WHERE id_candidature = 1);
 
@@ -53,15 +84,15 @@ INSERT INTO candidature (id_candidature, id_offre, id_candidat,
     cin_nom, cin_type_mime, cin_donnees,
     motivation, statut)
 SELECT 2, 2, 2,
-    'cv2.pdf','application/pdf', decode('255044462d312e34','hex'),
-    'lettre2.pdf','application/pdf', decode('255044462d312e34','hex'),
-    'cin2.jpg','image/jpeg', decode('ffd8ffe0','hex'),
+    'cv2.pdf','application/pdf', X'',
+    'lettre2.pdf','application/pdf', X'',
+    'cin2.jpg','image/jpeg', X'',
     'Disponible immédiatement.', 'PRESELECTIONNEE'
 WHERE NOT EXISTS (SELECT 1 FROM candidature WHERE id_candidature = 2);
 
 -- ========== ENTRETIEN + ÉVALUATIONS pour candidature 2 ==========
 INSERT INTO entretien (id_entretien, id_candidature, id_organisateur, date_entretien, lieu, statut)
-SELECT 1, 2, 3, CURRENT_TIMESTAMP - INTERVAL '2 days', 'Salle A', 'REALISE'
+SELECT 1, 2, 3, datetime('now', '-2 days'), 'Salle A', 'REALISE'
 WHERE NOT EXISTS (SELECT 1 FROM entretien WHERE id_entretien = 1);
 
 INSERT INTO evaluation_candidat (id_evaluation, id_candidature, id_evaluateur,
@@ -75,15 +106,6 @@ SELECT 2, 2, 3, NULL, 'DOSSIER', 7.0, 'Dossier solide.'
 WHERE NOT EXISTS (SELECT 1 FROM evaluation_candidat WHERE id_evaluation = 2);
 
 -- ========== Recaler les séquences ==========
-SELECT setval(pg_get_serial_sequence('utilisateur','id_utilisateur'),  (SELECT MAX(id_utilisateur) FROM utilisateur));
-SELECT setval(pg_get_serial_sequence('personne','id_personne'),        (SELECT MAX(id_personne) FROM personne));
-SELECT setval(pg_get_serial_sequence('candidat','id_candidat'),        (SELECT MAX(id_candidat) FROM candidat));
-SELECT setval(pg_get_serial_sequence('demande_recrutement','id_demande'), (SELECT MAX(id_demande) FROM demande_recrutement));
-SELECT setval(pg_get_serial_sequence('offre_emploi','id_offre'),       (SELECT MAX(id_offre) FROM offre_emploi));
-SELECT setval(pg_get_serial_sequence('candidature','id_candidature'),  (SELECT MAX(id_candidature) FROM candidature));
-SELECT setval(pg_get_serial_sequence('entretien','id_entretien'),      (SELECT MAX(id_entretien) FROM entretien));
-SELECT setval(pg_get_serial_sequence('evaluation_candidat','id_evaluation'), (SELECT MAX(id_evaluation) FROM evaluation_candidat));
-
 COMMIT;
 
 
@@ -130,35 +152,27 @@ WHERE NOT EXISTS (SELECT 1 FROM candidat WHERE id_candidat = 4);
 
 -- Demande 4 + offre 4
 INSERT INTO demande_recrutement (id_demande, id_poste, id_demandeur, effectif_demande, motif, salaire_par_personne, date_besoin, statut)
-SELECT 4, 1, 4, 1, 'Test postuler — offre A', 900000, CURRENT_DATE + 30, 'VALIDE'
+SELECT 4, 1, 4, 1, 'Test postuler — offre A', 900000, date('now', '+30 days'), 'VALIDE'
 WHERE NOT EXISTS (SELECT 1 FROM demande_recrutement WHERE id_demande = 4);
 
 INSERT INTO offre_emploi (id_offre, id_demande, titre, description, date_publication, date_limite, statut, cree_par)
 SELECT 4, 4, 'Ingénieur DevOps — Projet A',
        'Offre de test pour vérifier le dépôt de candidature (A).',
-       CURRENT_DATE, CURRENT_DATE + 60, 'PUBLIEE', 3
+       date('now'), date('now', '+60 days'), 'PUBLIEE', 3
 WHERE NOT EXISTS (SELECT 1 FROM offre_emploi WHERE id_offre = 4);
 
 -- Demande 5 + offre 5
 INSERT INTO demande_recrutement (id_demande, id_poste, id_demandeur, effectif_demande, motif, salaire_par_personne, date_besoin, statut)
-SELECT 5, 1, 4, 1, 'Test postuler — offre B', 850000, CURRENT_DATE + 30, 'VALIDE'
+SELECT 5, 1, 4, 1, 'Test postuler — offre B', 850000, date('now', '+30 days'), 'VALIDE'
 WHERE NOT EXISTS (SELECT 1 FROM demande_recrutement WHERE id_demande = 5);
 
 INSERT INTO offre_emploi (id_offre, id_demande, titre, description, date_publication, date_limite, statut, cree_par)
 SELECT 5, 5, 'Analyste QA — Projet B',
        'Offre de test pour vérifier le dépôt de candidature (B).',
-       CURRENT_DATE, CURRENT_DATE + 60, 'PUBLIEE', 3
+       date('now'), date('now', '+60 days'), 'PUBLIEE', 3
 WHERE NOT EXISTS (SELECT 1 FROM offre_emploi WHERE id_offre = 5);
 
 -- ==========================================================
 -- Recalage des séquences
 -- ==========================================================
-SELECT setval(pg_get_serial_sequence('utilisateur','id_utilisateur'),  (SELECT MAX(id_utilisateur) FROM utilisateur));
-SELECT setval(pg_get_serial_sequence('personne','id_personne'),        (SELECT MAX(id_personne) FROM personne));
-SELECT setval(pg_get_serial_sequence('candidat','id_candidat'),        (SELECT MAX(id_candidat) FROM candidat));
-SELECT setval(pg_get_serial_sequence('demande_recrutement','id_demande'), (SELECT MAX(id_demande) FROM demande_recrutement));
-SELECT setval(pg_get_serial_sequence('offre_emploi','id_offre'),       (SELECT MAX(id_offre) FROM offre_emploi));
-SELECT setval(pg_get_serial_sequence('candidature','id_candidature'),  (SELECT MAX(id_candidature) FROM candidature));
-SELECT setval(pg_get_serial_sequence('historique_candidature','id_historique'), (SELECT MAX(id_historique) FROM historique_candidature));
-
 COMMIT;

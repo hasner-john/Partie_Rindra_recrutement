@@ -76,10 +76,9 @@ class ContratService
 
         $nomFichier = 'contrat_' . $contrat['reference'] . '.pdf';
 
-        // Stockage BYTEA via hex
         $this->db->query(
-            "UPDATE contrat SET pdf_nom = ?, pdf_type_mime = ?, pdf_donnees = decode(?, 'hex') WHERE id_contrat = ?",
-            [$nomFichier, 'application/pdf', bin2hex($pdfBinary), $idContrat]
+            "UPDATE contrat SET pdf_nom = ?, pdf_type_mime = ?, pdf_donnees = ? WHERE id_contrat = ?",
+            [$nomFichier, 'application/pdf', $pdfBinary, $idContrat]
         );
 
         return [$nomFichier, 'application/pdf', strlen($pdfBinary)];

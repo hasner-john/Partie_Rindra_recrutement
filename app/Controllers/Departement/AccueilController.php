@@ -121,47 +121,47 @@ class AccueilController extends BaseController
             throw PageNotFoundException::forPageNotFound('Poste introuvable.');
         }
 
-        public function changerStatutPoste(int $postId)
-        {
-            $poste = $this->postes->findAuthorized($postId, $this->userId());
-            if ($poste === null) {
-                throw PageNotFoundException::forPageNotFound('Poste introuvable.');
-            }
-
-            $statut = (string) $this->request->getPost('statut');
-            if (! in_array($statut, ['ACTIF', 'INACTIF', 'FERME'], true)) {
-                return redirect()->back()->with('error', 'Statut de poste invalide.');
-            }
-
-            if ($statut === $poste['statut']) {
-                return redirect()->back()->with('error', 'Le poste possède déjà ce statut.');
-            }
-
-            $db = db_connect();
-            $db->transStart();
-            $this->postes->update($postId, ['statut' => $statut]);
-            $db->table('historique_poste')->insert([
-                'id_poste' => $postId,
-                'ancien_statut' => $poste['statut'],
-                'nouveau_statut' => $statut,
-                'id_utilisateur' => $this->userId(),
-                'commentaire' => 'Modification du statut du poste.',
-            ]);
-            $db->transComplete();
-
-            if ($db->transStatus() === false) {
-                return redirect()->back()->with('error', 'Le statut du poste n’a pas pu être modifié.');
-            }
-
-            return redirect()->back()->with('success', 'Statut du poste mis à jour.');
-        }
-
         return view('departement/conditions', [
             'titre' => 'Conditions du poste',
             'poste' => $poste,
             'conditions' => $this->conditions->forPoste($postId),
             'typesValeur' => ['TEXTE', 'NOMBRE', 'MONTANT', 'DATE', 'BOOLEEN'],
         ]);
+    }
+
+    public function changerStatutPoste(int $postId)
+    {
+        $poste = $this->postes->findAuthorized($postId, $this->userId());
+        if ($poste === null) {
+            throw PageNotFoundException::forPageNotFound('Poste introuvable.');
+        }
+
+        $statut = (string) $this->request->getPost('statut');
+        if (! in_array($statut, ['ACTIF', 'INACTIF', 'FERME'], true)) {
+            return redirect()->back()->with('error', 'Statut de poste invalide.');
+        }
+
+        if ($statut === $poste['statut']) {
+            return redirect()->back()->with('error', 'Le poste possède déjà ce statut.');
+        }
+
+        $db = db_connect();
+        $db->transStart();
+        $this->postes->update($postId, ['statut' => $statut]);
+        $db->table('historique_poste')->insert([
+            'id_poste' => $postId,
+            'ancien_statut' => $poste['statut'],
+            'nouveau_statut' => $statut,
+            'id_utilisateur' => $this->userId(),
+            'commentaire' => 'Modification du statut du poste.',
+        ]);
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->back()->with('error', 'Le statut du poste n’a pas pu être modifié.');
+        }
+
+        return redirect()->back()->with('success', 'Statut du poste mis à jour.');
     }
 
     public function enregistrerConditions(int $postId)

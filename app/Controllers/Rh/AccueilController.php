@@ -12,9 +12,18 @@ class AccueilController extends BaseController
 {
     public function index()
     {
+        $db = \Config\Database::connect();
+
         return view('rh/accueil', [
             'titre' => 'Espace RH',
             'role'  => session()->get('role'),
+            'indicateurs' => [
+                'demandes' => (int) $db->table('demande_recrutement')->whereIn('statut', ['BROUILLON', 'EN_ATTENTE'])->countAllResults(),
+                'candidatures' => (int) $db->table('candidature')->whereIn('statut', ['RECUE', 'PRESELECTIONNEE'])->countAllResults(),
+                'entretiens' => (int) $db->table('entretien')->where('statut', 'PLANIFIE')->countAllResults(),
+                'conges' => (int) $db->table('demande_conge')->where('statut', 'EN_ATTENTE')->countAllResults(),
+                'employes' => (int) $db->table('employe')->where('statut', 'ACTIF')->countAllResults(),
+            ],
         ]);
     }
 }

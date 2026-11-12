@@ -12,9 +12,28 @@ class CongesController extends BaseController
 {
     public function index()
     {
+        $db = \Config\Database::connect();
+        $evenements = array_merge(
+            $db->table('demande_conge dc')
+                ->select("dc.date_debut, dc.date_fin, dc.statut, tc.libelle AS libelle,
+                    e.matricule, p.prenom, p.nom, 'CONGE' AS type_evenement")
+                ->join('type_conge tc', 'tc.id_type_conge = dc.id_type_conge')
+                ->join('employe e', 'e.id_employe = dc.id_employe')
+                ->join('personne p', 'p.id_personne = e.id_personne')
+                ->whereIn('dc.statut', ['EN_ATTENTE', 'VALIDE'])
+                ->get()->getResultArray(),
+            $db->table('absence a')
+                ->select("a.date_debut, a.date_fin, a.type_absence AS libelle,
+                    a.justifiee, e.matricule, p.prenom, p.nom, 'ABSENCE' AS type_evenement")
+                ->join('employe e', 'e.id_employe = a.id_employe')
+                ->join('personne p', 'p.id_personne = e.id_personne')
+                ->get()->getResultArray()
+        );
+
         return view('rh/conges/index', [
             'demandes' => (new DemandeCongeModel())->avecDetails(),
             'types' => (new TypeCongeModel())->where('actif', 1)->findAll(),
+            'evenements' => $evenements,
         ]);
     }
 

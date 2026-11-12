@@ -40,12 +40,16 @@ La base utilisée par l’application est :
 writable/database.db
 ```
 
-Créer la base et charger les données de démonstration :
+Créer la base et charger le jeu de données complet (recrutement, dossier
+salarié, pointage et congés) :
 
 ```bash
-mkdir -p writable
-php -r '$db = new PDO("sqlite:writable/database.db"); $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); $db->exec(file_get_contents("base_recrutement.sql")); $db->exec(file_get_contents("donnees.sql")); echo "Base SQLite initialisée.\n";'
+php spark db:init
 ```
+
+Le seeder PHP est [DemoDatabaseSeeder.php](app/Services/DemoDatabaseSeeder.php).
+Il crée des données cohérentes dans toutes les tables et utilise `password`
+comme mot de passe pour les comptes de démonstration.
 
 Le script `base_recrutement.sql` contient maintenant les tables des modules :
 
@@ -61,9 +65,13 @@ Le script `base_recrutement.sql` contient maintenant les tables des modules :
 Cette opération supprime les données locales actuelles :
 
 ```bash
-rm -f writable/database.db
-mkdir -p writable
-php -r '$db = new PDO("sqlite:writable/database.db"); $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); $db->exec(file_get_contents("base_recrutement.sql")); $db->exec(file_get_contents("donnees.sql")); echo "Base SQLite réinitialisée.\n";'
+php spark db:reset
+```
+
+Pour une exécution non interactive (tests ou CI) :
+
+```bash
+php spark db:reset --force
 ```
 
 ## 4. Construire le frontend
@@ -94,17 +102,16 @@ Le serveur CodeIgniter sert automatiquement le dossier `public`.
 
 ## 6. Comptes de démonstration
 
-Le mot de passe des comptes fournis dans `donnees.sql` est `password`.
+Le mot de passe des comptes fournis par le seeder est `password`.
 
 | Rôle | Identifiant |
 |---|---|
+| Administrateur | `admin@test.local` |
 | Direction | `direction@test.local` |
 | RH | `rh@test.local` |
-| Département | `dept@test.local` |
-| Candidat 1 | `candidat@test.local` |
-| Candidat 2 | `candidat2@test.local` |
-| Candidat 3 | `candidat3@test.local` |
-| Candidat 4 | `candidat4@test.local` |
+| Département | `departement@test.local` |
+| Finance | `finance@test.local` |
+| Candidat | `candidat@test.local` |
 
 En développement, les connexions rapides sont disponibles :
 

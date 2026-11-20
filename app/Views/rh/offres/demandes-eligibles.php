@@ -7,11 +7,12 @@
     <title>Demandes éligibles - Espace RH</title>
 
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>"
         rel="stylesheet"
     >
 </head>
 <body class="bg-light">
+<a class="btn btn-outline-danger position-fixed top-0 end-0 m-3" href="<?= site_url('deconnexion') ?>">Déconnexion</a>
 
     <div class="container py-4">
         <h2>Demandes de recrutement éligibles</h2>

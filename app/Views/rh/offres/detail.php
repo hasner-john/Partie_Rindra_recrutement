@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détail de l'offre - Espace RH</title>
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>"
         rel="stylesheet"
     >
 </head>
 <body class="bg-light">
+<a class="btn btn-outline-danger position-fixed top-0 end-0 m-3" href="<?= site_url('deconnexion') ?>">Déconnexion</a>
 
 <div class="container py-4">
     <h2>Détail de l'offre d'emploi</h2>

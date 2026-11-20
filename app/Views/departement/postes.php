@@ -5,6 +5,7 @@
 body{font-family:system-ui,sans-serif;max-width:1050px;margin:2rem auto;padding:0 1rem}a,button{color:#fff;background:#2563eb;border:0;border-radius:5px;padding:.55rem .8rem;text-decoration:none;cursor:pointer}nav{display:flex;gap:.75rem;flex-wrap:wrap;margin:1rem 0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dbe2ea;padding:.65rem;text-align:left}select{padding:.5rem}.message{padding:.75rem;background:#dcfce7}
 </style></head>
 <body>
+<p style="text-align:right"><a href="<?= site_url('deconnexion') ?>">Déconnexion</a></p>
 <h1><?= esc($titre) ?></h1>
 <?php if (session()->getFlashdata('success')): ?><p class="message"><?= esc(session()->getFlashdata('success')) ?></p><?php endif; ?>
 <?php if (session()->getFlashdata('error')): ?><p class="message"><?= esc(session()->getFlashdata('error')) ?></p><?php endif; ?>

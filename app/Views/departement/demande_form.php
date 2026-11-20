@@ -2,6 +2,7 @@
 <html lang="fr"><head><meta charset="UTF-8"><title><?= esc($titre) ?></title>
 <style>body{font-family:system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:0 1rem}label{display:block;margin-top:1rem}input,select,textarea{width:100%;box-sizing:border-box;padding:.55rem}button,a{display:inline-block;margin-top:1rem;color:#fff;background:#2563eb;border:0;border-radius:5px;padding:.6rem .9rem;text-decoration:none}.error{color:#b91c1c}</style></head>
 <body><h1><?= esc($titre) ?></h1>
+<p style="text-align:right"><a href="<?= site_url('deconnexion') ?>">Déconnexion</a></p>
 <?php if (session()->getFlashdata('error')): ?><p class="error"><?= esc(session()->getFlashdata('error')) ?></p><?php endif; ?>
 <?php foreach ((array) session()->getFlashdata('errors') as $error): ?><p class="error"><?= esc($error) ?></p><?php endforeach; ?>
 <form method="post" action="<?= site_url('departement/demandes') ?>">

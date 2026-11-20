@@ -43,7 +43,7 @@ $routes->group('departement', ['filter' => 'role:DEPARTEMENT'], static function 
 // Espace RH — Tsiky
 // -------------------------------------------------------------------------
 
-$routes->group('rh', ['filter' => 'role:RH'], static function ($routes) {
+$routes->group('rh', ['filter' => 'role:RH,ADMINISTRATEUR'], static function ($routes) {
     $routes->get('/', 'Rh\AccueilController::index');
 
     // Conditions de contrat
@@ -99,7 +99,7 @@ $routes->group('rh', ['filter' => 'role:RH'], static function ($routes) {
         'candidatures/(:num)/entretien',
         'Rh\CandidaturesController::entretien/$1'
     );
-    
+
     // Idealy.5 — Entretiens
     $routes->get('entretiens', 'Rh\Entretiens::index');
     $routes->get('entretiens/nouveau/(:num)', 'Rh\Entretiens::nouveau/$1');   // après présélection
@@ -138,6 +138,23 @@ $routes->group('rh', ['filter' => 'role:RH'], static function ($routes) {
     $routes->post('employes/(:num)/salaires', 'Rh\EmployesController::ajouterSalaire/$1');
     $routes->post('employes/(:num)/affectations', 'Rh\EmployesController::ajouterAffectation/$1');
     $routes->post('employes/(:num)/documents', 'Rh\EmployesController::ajouterDocument/$1');
+    // Blocs 8 à 12
+    $routes->get('modules-avances', 'Rh\ModulesAvancesController::index');
+    $routes->post('modules-avances/paie/calculer', 'Rh\ModulesAvancesController::calculerPaie');
+
+    $routes->post('modules-avances/paie/valider', 'Rh\ModulesAvancesController::validerPaie');
+    $routes->get('modules-avances/paie/etat/(:num)', 'Rh\ModulesAvancesController::etatPaie/$1');
+    $routes->get('modules-avances/paie/bulletin/(:num)', 'Rh\ModulesAvancesController::bulletinPdf/$1');
+
+    $routes->post('modules-avances/carriere', 'Rh\ModulesAvancesController::creationCarriere');
+    $routes->post('modules-avances/formations', 'Rh\ModulesAvancesController::creerFormation');
+    $routes->post('modules-avances/incidents', 'Rh\ModulesAvancesController::creerIncident');
+    $routes->post('modules-avances/incidents/explications', 'Rh\ModulesAvancesController::demanderExplication');
+    $routes->post('modules-avances/incidents/reponse', 'Rh\ModulesAvancesController::repondreExplication');
+    $routes->post('modules-avances/incidents/sanction', 'Rh\ModulesAvancesController::sanctionner');
+    $routes->post('modules-avances/ruptures', 'Rh\ModulesAvancesController::creerRupture');
+
+    $routes->get('modules-avances/paie/consulter', 'Rh\ModulesAvancesController::consulterPaie');
 });
 
 // -------------------------------------------------------------------------
@@ -165,6 +182,13 @@ $routes->group('direction', ['filter' => 'role:DIRECTION,FINANCE'], static funct
     $routes->get('candidatures/(:num)',                     'Direction\CandidaturesController::show/$1');
     $routes->post('candidatures/(:num)/retenir',            'Direction\CandidaturesController::retenir/$1');
     $routes->get('candidatures/(:num)/document/(:segment)', 'Direction\CandidaturesController::document/$1/$2');
+
+
+    // Demandes de recrutement
+    $routes->get('demandes',                 'Direction\DemandesController::index');
+    $routes->get('demandes/(:num)',          'Direction\DemandesController::show/$1');
+    $routes->post('demandes/(:num)/valider', 'Direction\DemandesController::valider/$1');
+    $routes->post('demandes/(:num)/refuser', 'Direction\DemandesController::refuser/$1');
 });
 
 $routes->group('api', ['filter' => 'role:CANDIDAT'], static function ($routes) {
@@ -212,7 +236,7 @@ $routes->group('candidat', ['filter' => 'role:CANDIDAT'], static function ($rout
     $routes->get('contrats/(:num)/pdf',               'Candidat\ContratController::telechargerPdf/$1');
 // D.4.2 — Signature
 $routes->post('contrats/(:num)/signer', 'Candidat\ContratController::signer/$1');
-   
+
 });
 
 // -------------------------------------------------------------------------
@@ -220,8 +244,8 @@ $routes->post('contrats/(:num)/signer', 'Candidat\ContratController::signer/$1')
 // -------------------------------------------------------------------------
 $routes->group('api', ['filter' => 'role:DIRECTION,FINANCE'], static function ($routes) {
     $routes->get('direction/dashboard', 'Api\DirectionApiController::dashboard');
-    $routes->get('direction/candidatures', 'Api\DirectionApiController::candidatures'); 
-    $routes->get('direction/offres',       'Api\DirectionApiController::offres'); 
+    $routes->get('direction/candidatures', 'Api\DirectionApiController::candidatures');
+    $routes->get('direction/offres',       'Api\DirectionApiController::offres');
 });
 
 // -------------------------------------------------------------------------
@@ -246,7 +270,9 @@ $routes->get('dev/login-as/(:segment)', static function ($role) {
             'CANDIDAT3'   => 'candidat3@test.local',
             'CANDIDAT4'   => 'candidat4@test.local',
             'RH'=>'rh@test.local',
-            'DEPARTEMENT'=>'dept@test.local'];
+            'DEPARTEMENT'=>'departement@test.local',
+            'ADMINISTRATEUR'=>'admin@test.local',
+            'FINANCE'=>'finance@test.local'];
     if (! isset($map[$role])) return "Rôle inconnu";
     $u = \Config\Database::connect()->table('utilisateur')
         ->where('email', $map[$role])->get()->getRowArray();
@@ -255,7 +281,8 @@ $routes->get('dev/login-as/(:segment)', static function ($role) {
                     'email'=>$u['email'],'role'=>$u['role']]);
     return redirect()->to(match($u['role']){
         'DIRECTION'=>'/direction','CANDIDAT'=>'/candidat',
-        'RH'=>'/rh','DEPARTEMENT'=>'/departement',default=>'/'
+        'RH'=>'/rh','DEPARTEMENT'=>'/departement',
+        'ADMINISTRATEUR'=>'/admin','FINANCE'=>'/direction',default=>'/'
     });
 });
 $routes->get('dev/logout', static function () {

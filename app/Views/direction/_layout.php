@@ -35,6 +35,9 @@
     <strong>Direction RH</strong>
     <a href="/direction">Accueil</a>
     <a href="/direction/offres">Offres</a>
+    <a href="/direction/demandes">
+        Demandes de recrutement
+    </a>
     <a href="/direction/candidatures">Candidatures</a>
     <a href="/deconnexion" style="margin-left:auto;">Déconnexion</a>
 </nav>

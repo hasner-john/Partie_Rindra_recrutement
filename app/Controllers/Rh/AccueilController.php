@@ -23,6 +23,9 @@ class AccueilController extends BaseController
                 'entretiens' => (int) $db->table('entretien')->where('statut', 'PLANIFIE')->countAllResults(),
                 'conges' => (int) $db->table('demande_conge')->where('statut', 'EN_ATTENTE')->countAllResults(),
                 'employes' => (int) $db->table('employe')->where('statut', 'ACTIF')->countAllResults(),
+                'bulletins' => (int) $db->table('bulletin_paie')->countAllResults(),
+                'incidents' => (int) $db->table('incident')->whereNotIn('statut', ['CLOTURE'])->countAllResults(),
+                'ruptures' => (int) $db->table('rupture_contrat')->whereIn('statut', ['OUVERT', 'EN_COURS'])->countAllResults(),
             ],
         ]);
     }

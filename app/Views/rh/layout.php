@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Espace RH</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>" rel="stylesheet">
 <style>
     .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: #dee2e6; }
     .calendar-grid > div { background: #fff; min-height: 92px; padding: .4rem; }
@@ -29,6 +29,8 @@
       <a class="nav-link" href="<?= site_url('rh/employes') ?>">Dossiers salariés</a>
       <a class="nav-link" href="<?= site_url('rh/temps-travail') ?>">Pointage</a>
       <a class="nav-link" href="<?= site_url('rh/conges') ?>">Congés</a>
+      <a class="nav-link" href="<?= site_url('rh/modules-avances') ?>">Paie & avancés</a>
+      <a class="nav-link ms-auto text-warning" href="<?= site_url('deconnexion') ?>">Déconnexion</a>
     </div>
   </div>
 </nav>
@@ -41,5 +43,6 @@
   <?php endif; ?>
   <?= $this->renderSection('content') ?>
 </main>
+<script src="<?= base_url('assets/vendor/bootstrap/bootstrap.bundle.min.js') ?>"></script>
 </body>
 </html>

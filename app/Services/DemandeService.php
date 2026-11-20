@@ -99,7 +99,9 @@ class DemandeService
         $validation = [
             'id_demande' => $data['id_demande'],
             'id_validateur' => $changeur,
-            'type_validation' => 'RH',
+            'type_validation' => strtoupper((string) session()->get('role')) === 'ADMINISTRATEUR'
+                ? 'ADMINISTRATEUR'
+                : 'RH',
             'decision' => $decision,
             'commentaire' => $data['commentaire'] ?? null
         ];

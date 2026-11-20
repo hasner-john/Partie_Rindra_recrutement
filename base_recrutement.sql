@@ -94,7 +94,7 @@ CREATE TABLE validation_demande (
     id_demande BIGINT NOT NULL REFERENCES demande_recrutement(id_demande) ON DELETE CASCADE,
     id_validateur BIGINT NOT NULL REFERENCES utilisateur(id_utilisateur),
     type_validation VARCHAR(30) NOT NULL
-        CHECK (type_validation IN ('RH', 'DIRECTION', 'FINANCE')),
+        CHECK (type_validation IN ('RH', 'ADMINISTRATEUR', 'DIRECTION', 'FINANCE')),
     decision VARCHAR(30) NOT NULL
         CHECK (decision IN ('EN_ATTENTE', 'VALIDE', 'REFUSE', 'REFUSEE', 'REOUVERTURE')),
     commentaire TEXT,
@@ -575,4 +575,324 @@ CREATE INDEX idx_absence_employe_dates ON absence(id_employe, date_debut, date_f
 INSERT OR IGNORE INTO type_conge (code, libelle, jours_annuels) VALUES
     ('ANNUEL', 'Congé annuel', 30), ('MALADIE', 'Congé maladie', 0), ('SANS_SOLDE', 'Congé sans solde', 0);
 
+-- Blocs 8 à 12
+CREATE TABLE parametre_paie (
+    id_parametre INTEGER PRIMARY KEY,
+    code VARCHAR(60) NOT NULL,
+    valeur NUMERIC(12,4) NOT NULL,
+    secteur VARCHAR(20) NOT NULL DEFAULT 'NON_AGRICOLE',
+    date_effet DATE NOT NULL,
+    date_fin DATE,
+    UNIQUE(code, secteur, date_effet)
+);
+CREATE TABLE rubrique_paie (
+    id_rubrique INTEGER PRIMARY KEY,
+    code VARCHAR(30) NOT NULL UNIQUE,
+    libelle VARCHAR(120) NOT NULL,
+    nature VARCHAR(20) NOT NULL CHECK(nature IN ('GAIN','RETENUE','PATRONAL')),
+    imposable BOOLEAN NOT NULL DEFAULT TRUE,
+    actif BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE TABLE periode_paie (
+    id_periode INTEGER PRIMARY KEY,
+    mois INTEGER NOT NULL CHECK(mois BETWEEN 1 AND 12),
+    annee INTEGER NOT NULL CHECK(annee >= 2000),
+    date_paiement DATE,
+    statut VARCHAR(20) NOT NULL DEFAULT 'OUVERT'
+        CHECK(statut IN ('OUVERT','CALCUL','VALIDE','PAIE','CLOTURE','ANNULE')),
+    UNIQUE(mois, annee)
+);
+CREATE TABLE variable_paie (
+    id_variable INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe),
+    id_periode BIGINT NOT NULL REFERENCES periode_paie(id_periode),
+    id_rubrique BIGINT NOT NULL REFERENCES rubrique_paie(id_rubrique),
+    nombre NUMERIC(10,2) NOT NULL DEFAULT 0,
+    montant NUMERIC(14,2) NOT NULL DEFAULT 0,
+    motif TEXT,
+    UNIQUE(id_employe,id_periode,id_rubrique)
+);
+CREATE TABLE bulletin_paie (
+    id_bulletin INTEGER PRIMARY KEY,
+    id_periode BIGINT NOT NULL REFERENCES periode_paie(id_periode),
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe),
+    salaire_base NUMERIC(14,2) NOT NULL,
+    base_mois NUMERIC(14,2) NOT NULL,
+    retenue_absence NUMERIC(14,2) NOT NULL DEFAULT 0,
+    indemnites NUMERIC(14,2) NOT NULL DEFAULT 0,
+    majorations NUMERIC(14,2) NOT NULL DEFAULT 0,
+    salaire_brut NUMERIC(14,2) NOT NULL,
+    cnaps_salarial NUMERIC(14,2) NOT NULL,
+    cnaps_patronal NUMERIC(14,2) NOT NULL,
+    ostie_salarial NUMERIC(14,2) NOT NULL,
+    ostie_patronal NUMERIC(14,2) NOT NULL,
+    net_imposable NUMERIC(14,2) NOT NULL,
+    irsa NUMERIC(14,2) NOT NULL,
+    total_retenues NUMERIC(14,2) NOT NULL,
+    net_a_payer NUMERIC(14,2) NOT NULL,
+    statut VARCHAR(20) NOT NULL DEFAULT 'BROUILLON'
+        CHECK(statut IN ('BROUILLON','VALIDE','PAIE','ANNULE')),
+    pdf_nom VARCHAR(255),
+    pdf_type_mime VARCHAR(120),
+    pdf_donnees BLOB,
+    date_calcul TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_periode,id_employe)
+);
+CREATE TABLE ligne_bulletin (
+    id_ligne INTEGER PRIMARY KEY,
+    id_bulletin BIGINT NOT NULL REFERENCES bulletin_paie(id_bulletin) ON DELETE CASCADE,
+    code VARCHAR(30) NOT NULL,
+    designation VARCHAR(150) NOT NULL,
+    base_nombre NUMERIC(12,2),
+    taux NUMERIC(12,4),
+    gain NUMERIC(14,2) NOT NULL DEFAULT 0,
+    retenue NUMERIC(14,2) NOT NULL DEFAULT 0,
+    ordre_affichage INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE competence (
+    id_competence INTEGER PRIMARY KEY,
+    code VARCHAR(40) NOT NULL UNIQUE,
+    libelle VARCHAR(150) NOT NULL,
+    description TEXT,
+    actif BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE TABLE poste_competence (
+    id_poste_competence INTEGER PRIMARY KEY,
+    id_poste BIGINT NOT NULL REFERENCES poste(id_poste) ON DELETE CASCADE,
+    id_competence BIGINT NOT NULL REFERENCES competence(id_competence),
+    niveau_attendu INTEGER NOT NULL CHECK(niveau_attendu BETWEEN 1 AND 5),
+    UNIQUE(id_poste,id_competence)
+);
+CREATE TABLE employe_competence (
+    id_employe_competence INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    id_competence BIGINT NOT NULL REFERENCES competence(id_competence),
+    niveau_acquis INTEGER NOT NULL CHECK(niveau_acquis BETWEEN 1 AND 5),
+    date_evaluation DATE NOT NULL,
+    id_evaluateur BIGINT REFERENCES utilisateur(id_utilisateur),
+    UNIQUE(id_employe,id_competence,date_evaluation)
+);
+CREATE TABLE objectif (
+    id_objectif INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    titre VARCHAR(150) NOT NULL,
+    description TEXT,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    resultat TEXT,
+    statut VARCHAR(20) NOT NULL DEFAULT 'OUVERT'
+        CHECK(statut IN ('OUVERT','EN_COURS','ATTEINT','NON_ATTEINT','ANNULE')),
+    CHECK(date_fin >= date_debut)
+);
+CREATE TABLE evaluation_performance (
+    id_evaluation_performance INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    id_evaluateur BIGINT NOT NULL REFERENCES utilisateur(id_utilisateur),
+    periode VARCHAR(20) NOT NULL,
+    note_globale NUMERIC(4,2) CHECK(note_globale BETWEEN 0 AND 20),
+    commentaire TEXT,
+    statut VARCHAR(20) NOT NULL DEFAULT 'BROUILLON'
+        CHECK(statut IN ('BROUILLON','VALIDE','ARCHIVE')),
+    date_evaluation DATE NOT NULL
+);
+CREATE TABLE formation (
+    id_formation INTEGER PRIMARY KEY,
+    titre VARCHAR(180) NOT NULL,
+    description TEXT,
+    id_competence BIGINT REFERENCES competence(id_competence),
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    prestataire VARCHAR(180),
+    cout NUMERIC(14,2) NOT NULL DEFAULT 0,
+    statut VARCHAR(20) NOT NULL DEFAULT 'PLANIFIEE'
+        CHECK(statut IN ('PLANIFIEE','EN_COURS','TERMINEE','ANNULEE')),
+    CHECK(date_fin >= date_debut)
+);
+CREATE TABLE formation_participant (
+    id_participant INTEGER PRIMARY KEY,
+    id_formation BIGINT NOT NULL REFERENCES formation(id_formation) ON DELETE CASCADE,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    statut VARCHAR(20) NOT NULL DEFAULT 'INSCRIT'
+        CHECK(statut IN ('INSCRIT','PRESENT','ABANDON','TERMINE')),
+    niveau_avant INTEGER CHECK(niveau_avant BETWEEN 1 AND 5),
+    niveau_apres INTEGER CHECK(niveau_apres BETWEEN 1 AND 5),
+    UNIQUE(id_formation,id_employe)
+);
+
+CREATE TABLE mouvement_carriere (
+    id_mouvement INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    type_mouvement VARCHAR(30) NOT NULL
+        CHECK(type_mouvement IN ('PROMOTION','MUTATION','CHANGEMENT_STATUT','REVISION_SALAIRE','AFFECTATION')),
+    ancien_poste VARCHAR(150),
+    nouveau_poste VARCHAR(150),
+    ancien_salaire NUMERIC(14,2),
+    nouveau_salaire NUMERIC(14,2),
+    id_departement BIGINT REFERENCES departement(id_departement),
+    date_effet DATE NOT NULL,
+    date_fin DATE,
+    motif TEXT,
+    id_auteur BIGINT REFERENCES utilisateur(id_utilisateur),
+    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_mouvement_employe_date ON mouvement_carriere(id_employe,date_effet);
+
+CREATE TABLE incident (
+    id_incident INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL REFERENCES employe(id_employe) ON DELETE CASCADE,
+    date_incident DATE NOT NULL,
+    objet VARCHAR(180) NOT NULL,
+    description TEXT NOT NULL,
+    statut VARCHAR(20) NOT NULL DEFAULT 'SIGNALE'
+        CHECK(statut IN ('SIGNALE','EXPLICATIONS','REPONSE','COMMISSION','DECIDE','SANCTION','CLOTURE')),
+    id_signaleur BIGINT REFERENCES utilisateur(id_utilisateur),
+    date_creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE demande_explication (
+    id_demande_explication INTEGER PRIMARY KEY,
+    id_incident BIGINT NOT NULL UNIQUE REFERENCES incident(id_incident) ON DELETE CASCADE,
+    date_demande DATE NOT NULL,
+    date_limite DATE NOT NULL,
+    texte TEXT NOT NULL,
+    date_notification TIMESTAMP,
+    CHECK(date_limite >= date_demande)
+);
+CREATE TABLE reponse_explication (
+    id_reponse INTEGER PRIMARY KEY,
+    id_incident BIGINT NOT NULL UNIQUE REFERENCES incident(id_incident) ON DELETE CASCADE,
+    date_reponse DATE NOT NULL,
+    texte TEXT NOT NULL,
+    piece_jointe_nom VARCHAR(255),
+    piece_jointe_mime VARCHAR(120),
+    piece_jointe_donnees BLOB
+);
+CREATE TABLE sanction (
+    id_sanction INTEGER PRIMARY KEY,
+    id_incident BIGINT NOT NULL UNIQUE REFERENCES incident(id_incident) ON DELETE CASCADE,
+    type_sanction VARCHAR(40) NOT NULL
+        CHECK(type_sanction IN ('AVERTISSEMENT','BLAME','MISE_A_PIED','LICENCEMENT','AUTRE')),
+    motif TEXT NOT NULL,
+    date_decision DATE NOT NULL,
+    date_effet DATE NOT NULL,
+    id_decideur BIGINT REFERENCES utilisateur(id_utilisateur),
+    statut VARCHAR(20) NOT NULL DEFAULT 'NOTIFIEE'
+        CHECK(statut IN ('NOTIFIEE','CONTESTEE','EXECUTOIRE','ANNULEE')),
+    piece_notification BLOB
+);
+
+CREATE TABLE rupture_contrat (
+    id_rupture INTEGER PRIMARY KEY,
+    id_employe BIGINT NOT NULL UNIQUE REFERENCES employe(id_employe),
+    motif VARCHAR(40) NOT NULL
+        CHECK(motif IN ('DEMISSION','LICENCIEMENT_ECONOMIQUE','LICENCIEMENT_FAUTE','FIN_CDD','RETRAITE','RUPTURE_CONVENTIONNELLE','AUTRE')),
+    date_notification DATE NOT NULL,
+    date_sortie DATE NOT NULL,
+    duree_preavis_jours INTEGER NOT NULL DEFAULT 0,
+    motif_detail TEXT,
+    statut VARCHAR(20) NOT NULL DEFAULT 'OUVERT'
+        CHECK(statut IN ('OUVERT','EN_COURS','VALIDEE','CLOTURE','ANNULEE')),
+    id_auteur BIGINT REFERENCES utilisateur(id_utilisateur),
+    CHECK(date_sortie >= date_notification)
+);
+CREATE TABLE solde_tout_compte (
+    id_stc INTEGER PRIMARY KEY,
+    id_rupture BIGINT NOT NULL UNIQUE REFERENCES rupture_contrat(id_rupture),
+    dernier_salaire NUMERIC(14,2) NOT NULL DEFAULT 0,
+    salaire_proratise NUMERIC(14,2) NOT NULL DEFAULT 0,
+    indemnite_conges NUMERIC(14,2) NOT NULL DEFAULT 0,
+    indemnite_rupture NUMERIC(14,2) NOT NULL DEFAULT 0,
+    avances NUMERIC(14,2) NOT NULL DEFAULT 0,
+    retenues NUMERIC(14,2) NOT NULL DEFAULT 0,
+    montant_net NUMERIC(14,2) NOT NULL DEFAULT 0,
+    statut VARCHAR(20) NOT NULL DEFAULT 'BROUILLON'
+        CHECK(statut IN ('BROUILLON','VALIDE','PAIE','ANNULE')),
+    date_calcul TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE checklist_offboarding (
+    id_checklist INTEGER PRIMARY KEY,
+    id_rupture BIGINT NOT NULL REFERENCES rupture_contrat(id_rupture) ON DELETE CASCADE,
+    element VARCHAR(100) NOT NULL,
+    valeur_statut VARCHAR(30) NOT NULL DEFAULT 'A_FAIRE'
+        CHECK(valeur_statut IN ('A_FAIRE','EN_COURS','TERMINE','NON_APPLICABLE')),
+    date_echeance DATE,
+    date_realisation TIMESTAMP,
+    commentaire TEXT,
+    UNIQUE(id_rupture,element)
+);
+CREATE TABLE attestation_travail (
+    id_attestation INTEGER PRIMARY KEY,
+    id_rupture BIGINT NOT NULL REFERENCES rupture_contrat(id_rupture) ON DELETE CASCADE,
+    type_attestation VARCHAR(40) NOT NULL
+        CHECK(type_attestation IN ('CERTIFICAT_TRAVAIL','ATTESTATION_CNAPS','ATTESTATION_OSTIE','AUTRE')),
+    reference VARCHAR(80) NOT NULL UNIQUE,
+    pdf_nom VARCHAR(255),
+    pdf_type_mime VARCHAR(120),
+    pdf_donnees BLOB,
+    date_emission TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE audit_rh (
+    id_audit INTEGER PRIMARY KEY,
+    id_utilisateur BIGINT REFERENCES utilisateur(id_utilisateur),
+    action VARCHAR(20) NOT NULL,
+    objet VARCHAR(80) NOT NULL,
+    objet_id INTEGER,
+    ancienne_valeur TEXT,
+    nouvelle_valeur TEXT,
+    motif TEXT,
+    adresse_ip VARCHAR(45),
+    date_action TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMIT;
+
+
+
+
+-- ============================================================================
+BEGIN;
+-- Données manquantes pour l'état de paie / bulletin
+ALTER TABLE employe ADD COLUMN numero_cnaps VARCHAR(30);
+ALTER TABLE employe ADD COLUMN categorie VARCHAR(10);
+ALTER TABLE employe ADD COLUMN secteur VARCHAR(20) NOT NULL DEFAULT 'NON_AGRICOLE';
+ALTER TABLE heure_supplementaire ADD COLUMN nuit BOOLEAN NOT NULL DEFAULT 0;
+ALTER TABLE bulletin_paie ADD COLUMN heures_absence NUMERIC(8,2) NOT NULL DEFAULT 0;
+ALTER TABLE bulletin_paie ADD COLUMN rappels NUMERIC(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE bulletin_paie ADD COLUMN mode_reglement VARCHAR(20) NOT NULL DEFAULT 'VIREMENT';
+
+-- Barème IRSA historisé (RG-TRANS-05)
+CREATE TABLE bareme_irsa (
+    id_bareme INTEGER PRIMARY KEY,
+    borne_inf NUMERIC(14,2) NOT NULL,
+    borne_sup NUMERIC(14,2),
+    taux NUMERIC(6,4) NOT NULL,
+    date_effet DATE NOT NULL,
+    date_fin DATE
+);
+INSERT INTO bareme_irsa (borne_inf,borne_sup,taux,date_effet) VALUES
+ (0,350000,0,'2000-01-01'),(350000,400000,0.05,'2000-01-01'),(400000,500000,0.10,'2000-01-01'),
+ (500000,600000,0.15,'2000-01-01'),(600000,4000000,0.20,'2000-01-01'),(4000000,NULL,0.25,'2000-01-01');
+
+-- Paramètres communs aux deux secteurs
+INSERT OR IGNORE INTO parametre_paie(code,valeur,secteur,date_effet)
+SELECT p.c,p.v,s.sec,'2000-01-01' FROM (
+  SELECT 'SME' c,350000 v UNION ALL SELECT 'MULT_PLAFOND_CNAPS',8
+  UNION ALL SELECT 'OSTIE_SALARIAL',1 UNION ALL SELECT 'OSTIE_PATRONAL',5
+  UNION ALL SELECT 'DIVISEUR_JOURS',30 UNION ALL SELECT 'HEURES_JOUR',8
+  UNION ALL SELECT 'SEUIL_HS_1',12 UNION ALL SELECT 'PLAFOND_HS',20
+  UNION ALL SELECT 'COEF_HS_1',1.30 UNION ALL SELECT 'COEF_HS_2',1.50
+  UNION ALL SELECT 'COEF_DIMANCHE',2 UNION ALL SELECT 'COEF_NUIT',1.5
+) p CROSS JOIN (SELECT 'NON_AGRICOLE' sec UNION ALL SELECT 'AGRICOLE') s;
+
+-- Paramètres propres à chaque secteur
+INSERT OR IGNORE INTO parametre_paie(code,valeur,secteur,date_effet) VALUES
+ ('CNAPS_SALARIAL',1,'NON_AGRICOLE','2000-01-01'),('CNAPS_PATRONAL',13,'NON_AGRICOLE','2000-01-01'),
+ ('CNAPS_SALARIAL',6,'AGRICOLE','2000-01-01'),('CNAPS_PATRONAL',8,'AGRICOLE','2000-01-01'),
+ ('DIVISEUR_HEURES',173.33,'NON_AGRICOLE','2000-01-01'),('DIVISEUR_HEURES',200,'AGRICOLE','2000-01-01');
+
+-- Rubriques utilisées par les variables
+INSERT OR IGNORE INTO rubrique_paie(code,libelle,nature,imposable) VALUES
+ ('INDEMNITE','Indemnités (logement, transport, représentation)','GAIN',1),
+ ('RAPPEL','Rappels et autres','GAIN',1),
+ ('RETENUE','Acomptes / avances','RETENUE',0);
 COMMIT;

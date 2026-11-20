@@ -17,6 +17,8 @@
         ['Entretiens planifiés', $indicateurs['entretiens'], 'rh/entretiens', 'info'],
         ['Congés en attente', $indicateurs['conges'], 'rh/conges', 'success'],
         ['Salariés actifs', $indicateurs['employes'], 'rh/employes', 'dark'],
+        ['Bulletins de paie', $indicateurs['bulletins'], 'rh/modules-avances', 'danger'],
+        ['Incidents disciplinaires', $indicateurs['incidents'], 'rh/modules-avances', 'secondary'],
     ];
     ?>
     <?php foreach ($cards as [$label, $value, $link, $color]): ?>

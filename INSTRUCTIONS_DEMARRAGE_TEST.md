@@ -32,6 +32,30 @@ composer install
 npm install
 ```
 
+Bootstrap est déjà fourni localement dans
+`public/assets/vendor/bootstrap`. Aucun accès Internet n’est nécessaire pour
+charger le CSS ou le JavaScript de l’espace RH. Après une modification du
+projet, videz le cache du navigateur avec `Ctrl+F5`.
+
+### Export Excel des états de paie
+
+PhpSpreadsheet est installé avec Composer :
+
+```bash
+composer require phpoffice/phpspreadsheet
+composer install
+composer dump-autoload
+```
+
+Vérification :
+
+```bash
+php -r 'require "vendor/autoload.php"; echo class_exists("PhpOffice\\\\PhpSpreadsheet\\\\Spreadsheet") ? "OK\n" : "MANQUANT\n";'
+```
+
+Cette erreur n’est pas liée à une extension de moteur de base de données.
+Elle nécessite les extensions PHP `zip`, `xml`, `mbstring` et `intl`.
+
 ## 3. Initialiser SQLite
 
 La base utilisée par l’application est :
@@ -112,8 +136,54 @@ Le mot de passe des comptes fournis par le seeder est `password`.
 | Département | `departement@test.local` |
 | Finance | `finance@test.local` |
 | Candidat | `candidat@test.local` |
+| Employé 1 | `employe1@test.local` |
+| Employé 2 | `employe2@test.local` |
+| Employé 3 | `employe3@test.local` |
+
+Le jeu de données contient quatre salariés (`EMP-0001` à `EMP-0004`).
+Chaque salarié possède un contrat signé et un PDF de démonstration
+téléchargeable depuis son dossier RH. Les contrats candidats sont également
+disponibles dans l’espace candidat lorsque le compte correspondant est utilisé.
+
+Les rôles disposent tous d’un bouton ou lien de déconnexion visible dans
+leur espace. L’administrateur peut ouvrir l’espace RH et valider ou refuser
+les demandes de recrutement depuis `/rh/demandes`. Ces décisions sont
+journalisées avec le type de validation `ADMINISTRATEUR`.
 
 En développement, les connexions rapides sont disponibles :
+
+## 7. Blocs 8 à 12
+
+Après `php spark db:reset --force`, l’espace RH contient les données des
+modules avancés :
+
+- **Paie** : périodes, rubriques, variables, paramètres CNaPS/OSTIE/IRSA et bulletins.
+- **Évaluation et formation** : référentiel de compétences, objectifs, évaluations et formations.
+- **Carrière** : promotions, mutations, révisions salariales et affectations avec dates d’effet.
+- **Discipline** : incident, demande d’explications, réponse et traçabilité d’audit.
+- **Rupture / offboarding** : rupture, STC, attestations et checklist de départ.
+
+Accès RH :
+
+```text
+http://localhost:8080/rh/modules-avances
+```
+
+Depuis cette page, les RH peuvent calculer les bulletins de paie pour une
+période, créer une formation ou un mouvement de carrière, signaler un incident
+et enregistrer une rupture avec sa checklist.
+
+Le guide détaillé des opérations, des calculs et des dépendances est disponible
+dans [MODE_EMPLOI_BLOCS_8_A_12.md](MODE_EMPLOI_BLOCS_8_A_12.md).
+
+## 8. Test PHP complet
+
+Une campagne HTTP couvre les blocs 1 à 12, l’authentification, les espaces des
+six rôles, les liens de déconnexion et les actions métier principales :
+
+```bash
+php vendor/bin/phpunit tests/feature/CompleteSirhTest.php
+```
 
 ```text
 http://localhost:8080/dev/login-as/DIRECTION
